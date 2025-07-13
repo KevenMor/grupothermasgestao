@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Paper, Divider, CircularProgress, Button, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip } from "@mui/material";
-import { Download, Eye, Copy, Send, FileText, CreditCard, QrCode } from "lucide-react";
+import { Box, Typography, Paper, Divider, CircularProgress, Button, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip, TextField } from "@mui/material";
+import { Download, Eye, Copy, Send, FileText, CreditCard, QrCode, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 // Tipos auxiliares
@@ -84,6 +84,10 @@ export default function VendaDetalhePage() {
   const [loadingCobrancas, setLoadingCobrancas] = useState(false);
   const [criandoCliente, setCriandoCliente] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: 'success' | 'error' | 'info'; texto: string } | null>(null);
+  const [modalEditar, setModalEditar] = useState<{ open: boolean, cobranca?: CobrancaAsaas }>({ open: false });
+  const [modalExcluir, setModalExcluir] = useState<{ open: boolean, cobranca?: CobrancaAsaas }>({ open: false });
+  const [editForm, setEditForm] = useState<{ valor: number; vencimento: string; descricao: string }>({ valor: 0, vencimento: '', descricao: '' });
+  const [loadingAcao, setLoadingAcao] = useState(false);
 
   useEffect(() => {
     async function fetchVenda() {
@@ -246,6 +250,86 @@ export default function VendaDetalhePage() {
     document.body.removeChild(link);
   };
 
+  // Função para abrir modal de edição
+  const abrirModalEditar = (cobranca: CobrancaAsaas) => {
+    setEditForm({
+      valor: cobranca.value,
+      vencimento: cobranca.dueDate.split('T')[0],
+      descricao: cobranca.description || ''
+    });
+    setModalEditar({ open: true, cobranca });
+  };
+
+  // Função para abrir modal de exclusão
+  const abrirModalExcluir = (cobranca: CobrancaAsaas) => {
+    setModalExcluir({ open: true, cobranca });
+  };
+
+  // Função para editar cobrança
+  const editarCobranca = async () => {
+    if (!modalEditar.cobranca) return;
+    setLoadingAcao(true);
+    try {
+      const response = await fetch('/api/asaas/editar-cobranca', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId: modalEditar.cobranca.id,
+          valor: editForm.valor,
+          vencimento: editForm.vencimento,
+          descricao: editForm.descricao
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setMensagem({ tipo: 'success', texto: 'Cobrança editada com sucesso!' });
+        setModalEditar({ open: false });
+        // Atualizar lista de cobranças
+        if (venda) {
+          const response = await fetch(`/api/asaas/listar-cobrancas?venda_id=${venda.id}`);
+          const result = await response.json();
+          setCobrancas(result.data || []);
+        }
+      } else {
+        setMensagem({ tipo: 'error', texto: result.error || 'Erro ao editar cobrança.' });
+      }
+    } catch (err) {
+      setMensagem({ tipo: 'error', texto: 'Erro ao editar cobrança.' });
+    } finally {
+      setLoadingAcao(false);
+    }
+  };
+
+  // Função para excluir cobrança
+  const excluirCobranca = async () => {
+    if (!modalExcluir.cobranca) return;
+    setLoadingAcao(true);
+    try {
+      const response = await fetch('/api/asaas/excluir-cobranca', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: modalExcluir.cobranca.id })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setMensagem({ tipo: 'success', texto: 'Cobrança excluída com sucesso!' });
+        setModalExcluir({ open: false });
+        // Atualizar lista de cobranças
+        if (venda) {
+          const response = await fetch(`/api/asaas/listar-cobrancas?venda_id=${venda.id}`);
+          const result = await response.json();
+          setCobrancas(result.data || []);
+        }
+      } else {
+        setMensagem({ tipo: 'error', texto: result.error || 'Erro ao excluir cobrança.' });
+      }
+    } catch (err) {
+      setMensagem({ tipo: 'error', texto: 'Erro ao excluir cobrança.' });
+    } finally {
+      setLoadingAcao(false);
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 1, md: 4 } }}>
       <Typography variant="h4" fontWeight={700} mb={2} color="primary.main">
@@ -358,6 +442,16 @@ export default function VendaDetalhePage() {
                     </TableCell>
                     <TableCell align="center">
                       <Box display="flex" gap={1} justifyContent="center">
+                        <Tooltip title="Editar cobrança">
+                          <IconButton size="small" onClick={() => abrirModalEditar(cobranca)}>
+                            <Pencil size={16} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Excluir cobrança">
+                          <IconButton size="small" color="error" onClick={() => abrirModalExcluir(cobranca)}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Copiar ID">
                           <IconButton
                             size="small"
@@ -472,6 +566,56 @@ export default function VendaDetalhePage() {
           <Typography color="text.secondary">Nenhum histórico registrado.</Typography>
         )}
       </Paper>
+
+      {/* Modal de edição de cobrança */}
+      {modalEditar.open && (
+        <Box position="fixed" top={0} left={0} width="100vw" height="100vh" bgcolor="rgba(0,0,0,0.3)" zIndex={9999} display="flex" alignItems="center" justifyContent="center">
+          <Paper sx={{ p: 4, borderRadius: 4, minWidth: 340 }}>
+            <Typography variant="h6" mb={2}>Editar Cobrança</Typography>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <TextField
+                label="Descrição"
+                value={editForm.descricao}
+                onChange={e => setEditForm({ ...editForm, descricao: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Valor (R$)"
+                type="number"
+                value={editForm.valor}
+                onChange={e => setEditForm({ ...editForm, valor: Number(e.target.value) })}
+                fullWidth
+              />
+              <TextField
+                label="Vencimento"
+                type="date"
+                value={editForm.vencimento}
+                onChange={e => setEditForm({ ...editForm, vencimento: e.target.value })}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
+            <Box display="flex" gap={2} mt={3} justifyContent="flex-end">
+              <Button onClick={() => setModalEditar({ open: false })} disabled={loadingAcao}>Cancelar</Button>
+              <Button variant="contained" onClick={editarCobranca} disabled={loadingAcao}>{loadingAcao ? 'Salvando...' : 'Salvar'}</Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
+      {/* Modal de confirmação de exclusão */}
+      {modalExcluir.open && (
+        <Box position="fixed" top={0} left={0} width="100vw" height="100vh" bgcolor="rgba(0,0,0,0.3)" zIndex={9999} display="flex" alignItems="center" justifyContent="center">
+          <Paper sx={{ p: 4, borderRadius: 4, minWidth: 320 }}>
+            <Typography variant="h6" mb={2}>Excluir Cobrança</Typography>
+            <Typography mb={3}>Tem certeza que deseja excluir esta cobrança? Esta ação não poderá ser desfeita.</Typography>
+            <Box display="flex" gap={2} justifyContent="flex-end">
+              <Button onClick={() => setModalExcluir({ open: false })} disabled={loadingAcao}>Cancelar</Button>
+              <Button variant="contained" color="error" onClick={excluirCobranca} disabled={loadingAcao}>{loadingAcao ? 'Excluindo...' : 'Excluir'}</Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
     </Box>
   );
 } 
