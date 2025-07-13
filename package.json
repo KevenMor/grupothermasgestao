@@ -1,0 +1,37 @@
+{
+  "name": "sistema-thermas",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.20",
+    "@mui/material": "^5.14.20",
+    "@mui/system": "^5.14.20",
+    "@supabase/supabase-js": "^2.38.4",
+    "@tailwindcss/postcss": "^4.1.11",
+    "autoprefixer": "^10.4.21",
+    "lucide-react": "^0.294.0",
+    "next": "15.3.5",
+    "postcss": "^8.5.6",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-imask": "^7.6.1",
+    "react-number-format": "^5.4.4",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "15.3.5",
+    "typescript": "^5"
+  }
+}
