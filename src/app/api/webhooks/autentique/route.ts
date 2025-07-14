@@ -18,7 +18,6 @@ export async function POST(request: Request) {
     }
 
     const documentId = data?.document?.id;
-    const documentUrl = data?.document?.download_url;
     const externalReference = data?.document?.external_reference;
 
     if (!documentId) {
@@ -31,16 +30,11 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Atualizar a venda com o status de assinatura e URL do contrato
-    let updateData: any = {
+    // Apenas atualizar o status da assinatura (não sobrescrever a URL do DocuPilot)
+    const updateData = {
       assinatura_status: "assinado",
       updated_at: new Date().toISOString()
     };
-
-    // Se temos a URL do documento, salvar também
-    if (documentUrl) {
-      updateData.contrato_url = documentUrl;
-    }
 
     // Se temos o external_reference, usar para identificar a venda
     let query = supabase
@@ -62,13 +56,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('Venda atualizada com sucesso:', { documentId, documentUrl, externalReference });
+    console.log('Status de assinatura atualizado com sucesso:', { documentId, externalReference });
 
     return NextResponse.json({ 
       ok: true, 
-      message: "Status atualizado com sucesso",
-      documentId,
-      documentUrl 
+      message: "Status de assinatura atualizado com sucesso",
+      documentId
     });
   } catch (error) {
     console.error('Erro no webhook:', error);
