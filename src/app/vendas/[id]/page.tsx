@@ -70,6 +70,7 @@ interface VendaDetalhe {
   status: string;
   contrato_url?: string;
   assinatura_status?: string;
+  autentique_document_id?: string;
   asaas_customer_id?: string;
   pagamentos?: Pagamento[];
   historico_envio?: HistoricoEnvio[];
