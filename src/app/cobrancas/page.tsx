@@ -184,6 +184,9 @@ function CobrancasPage() {
     severity: 'success'
   });
 
+  // Adicionar novo estado para modal de cadastro
+  const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
+
   const carregarCobrancas = async () => {
     try {
       setLoading(true);
@@ -385,11 +388,13 @@ function CobrancasPage() {
         <Typography variant="h4" component="h1">
           Cobranças e Pagamentos
         </Typography>
-        <Tooltip title="Atualizar">
-          <IconButton onClick={carregarCobrancas} color="primary">
-            <RefreshCw />
-          </IconButton>
-        </Tooltip>
+        <Box display="flex" gap={2}>
+          <Tooltip title="Atualizar">
+            <IconButton onClick={carregarCobrancas} color="primary">
+              <RefreshCw />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {error && (

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Typography, Paper, Divider, CircularProgress, Button, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip, TextField } from "@mui/material";
+import { Box, Typography, Paper, Divider, CircularProgress, Button, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip, TextField, MenuItem, FormControl, InputLabel, Select, Card, CardActionArea, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { Download, Eye, Copy, Send, FileText, CreditCard, QrCode, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -89,6 +89,16 @@ export default function VendaDetalhePage() {
   const [modalExcluir, setModalExcluir] = useState<{ open: boolean, cobranca?: CobrancaAsaas }>({ open: false });
   const [editForm, setEditForm] = useState<{ valor: number; vencimento: string; descricao: string }>({ valor: 0, vencimento: '', descricao: '' });
   const [loadingAcao, setLoadingAcao] = useState(false);
+  // Adicionar estado para modal de cadastro
+  const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
+  // Adicionar estado para o formulário do modal de nova cobrança
+  const [novaCobranca, setNovaCobranca] = useState({
+    tipo: 'PIX',
+    vencimento: '',
+    valor: '',
+    descricao: '',
+    parcelas: '1',
+  });
 
   useEffect(() => {
     async function fetchVenda() {
@@ -331,6 +341,110 @@ export default function VendaDetalhePage() {
     }
   };
 
+  // Função para formatar valor como moeda brasileira
+  function formatarValor(valor: string) {
+    const num = valor.replace(/\D/g, "");
+    const float = (parseInt(num, 10) / 100).toFixed(2);
+    return float.replace('.', ',').replace(/(\d)(?=(\d{3})+,)/g, '$1.')
+  }
+
+  // Função para formatar data como dd/mm/aaaa
+  function formatarData(data: string) {
+    let v = data.replace(/\D/g, '').slice(0,8);
+    if (v.length >= 5) return v.replace(/(\d{2})(\d{2})(\d{0,4})/, '$1/$2/$3');
+    if (v.length >= 3) return v.replace(/(\d{2})(\d{0,2})/, '$1/$2');
+    return v;
+  }
+
+  // Função para cadastrar nova cobrança
+  const cadastrarCobranca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!venda) return;
+    setLoadingAcao(true);
+    setMensagem(null);
+
+    // Validação dos campos obrigatórios
+    const valorNumerico = (Number(novaCobranca.valor.replace(/\D/g, '')) / 100).toFixed(2);
+    const vencimentoParts = novaCobranca.vencimento.split('/');
+    const vencimentoISO = vencimentoParts.length === 3 ? `${vencimentoParts[2]}-${vencimentoParts[1]}-${vencimentoParts[0]}` : '';
+    const descricao = novaCobranca.descricao?.trim();
+    const parcelas = novaCobranca.tipo === 'CREDIT_CARD' ? Number(novaCobranca.parcelas) : 1;
+    if (!valorNumerico || Number(valorNumerico) <= 0) {
+      setMensagem({ tipo: 'error', texto: 'Informe um valor válido para a cobrança.' });
+      setLoadingAcao(false);
+      return;
+    }
+    if (!vencimentoISO || vencimentoISO.length !== 10) {
+      setMensagem({ tipo: 'error', texto: 'Informe uma data de vencimento válida.' });
+      setLoadingAcao(false);
+      return;
+    }
+    if (!descricao) {
+      setMensagem({ tipo: 'error', texto: 'Informe uma descrição para a cobrança.' });
+      setLoadingAcao(false);
+      return;
+    }
+    if (novaCobranca.tipo === 'CREDIT_CARD' && (!parcelas || parcelas < 1 || parcelas > 12)) {
+      setMensagem({ tipo: 'error', texto: 'Selecione uma quantidade de parcelas entre 1 e 12.' });
+      setLoadingAcao(false);
+      return;
+    }
+    if (!venda.asaas_customer_id) {
+      setMensagem({ tipo: 'error', texto: 'Cliente Asaas não encontrado. Crie o cliente antes de cadastrar a cobrança.' });
+      setLoadingAcao(false);
+      return;
+    }
+
+    // Montar body da requisição seguindo o padrão do cadastro de vendas
+    const body = {
+      venda_id: venda.id,
+      cobranca: {
+        cliente_nome: venda.cliente_nome,
+        cliente_cpf: venda.cliente_cpf,
+        cliente_email: venda.cliente_email,
+        cliente_telefone: venda.cliente_telefone,
+        forma_pagamento: novaCobranca.tipo,
+        valor_total: Number(valorNumerico),
+        data_pagamento: vencimentoISO,
+        quantidade_parcelas: novaCobranca.tipo === 'CREDIT_CARD' ? Number(novaCobranca.parcelas) : 1,
+        descricao: descricao
+      }
+    };
+    // Log para depuração
+    console.log('Enviando cobrança para o Asaas:', body);
+
+    try {
+      const response = await fetch('/api/asaas/criar-cobranca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        result = { error: 'Erro inesperado ao processar resposta do servidor.' };
+      }
+      if (response.ok) {
+        setMensagem({ tipo: 'success', texto: 'Cobrança criada com sucesso!' });
+        setModalCadastroOpen(false);
+        setNovaCobranca({ tipo: 'PIX', vencimento: '', valor: '', descricao: '', parcelas: '1' });
+        // Atualizar lista de cobranças
+        const response = await fetch(`/api/asaas/listar-cobrancas?venda_id=${venda.id}`);
+        const result = await response.json();
+        setCobrancas(result.data || []);
+      } else {
+        setMensagem({ tipo: 'error', texto: (result && (result.error || result.message)) ? `${result.error || result.message}` : `Erro ao criar cobrança. Código: ${response.status}` });
+        // Logar resposta completa para depuração
+        console.error('Erro ao criar cobrança:', result);
+      }
+    } catch (err) {
+      setMensagem({ tipo: 'error', texto: 'Erro ao criar cobrança.' });
+    } finally {
+      setLoadingAcao(false);
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 1, md: 4 } }}>
       <Typography variant="h4" fontWeight={700} mb={2} color="primary.main">
@@ -382,7 +496,12 @@ export default function VendaDetalhePage() {
       </Paper>
 
       <Paper sx={{ p: 3, borderRadius: 4, mb: 4 }}>
-        <Typography variant="h6" fontWeight={600} mb={2}>Faturas e Cobranças</Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6" fontWeight={600}>Faturas e Cobranças</Typography>
+          <Button variant="contained" color="primary" onClick={() => setModalCadastroOpen(true)}>
+            Adicionar Fatura
+          </Button>
+        </Box>
         <Divider sx={{ mb: 2 }} />
         
         {loadingCobrancas ? (
@@ -616,6 +735,95 @@ export default function VendaDetalhePage() {
             </Box>
           </Paper>
         </Box>
+      )}
+
+      {/* Modal de cadastro de cobrança */}
+      {modalCadastroOpen && (
+        <Dialog open={modalCadastroOpen} onClose={() => setModalCadastroOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Nova Cobrança</DialogTitle>
+          <DialogContent>
+            <Box component="form" onSubmit={cadastrarCobranca}>
+              {/* Forma de pagamento: cards em vez de select */}
+              <Box display="flex" gap={2} mb={2}>
+                <Card
+                  variant={novaCobranca.tipo === 'PIX' ? 'elevation' : 'outlined'}
+                  sx={{ borderColor: novaCobranca.tipo === 'PIX' ? 'primary.main' : 'grey.300', borderWidth: 2, minWidth: 120, boxShadow: novaCobranca.tipo === 'PIX' ? 4 : 0 }}
+                >
+                  <CardActionArea onClick={() => setNovaCobranca({ ...novaCobranca, tipo: 'PIX' })}>
+                    <Box p={2} textAlign="center">
+                      <Typography variant="subtitle1" fontWeight={novaCobranca.tipo === 'PIX' ? 700 : 400}>PIX</Typography>
+                    </Box>
+                  </CardActionArea>
+                </Card>
+                <Card
+                  variant={novaCobranca.tipo === 'CREDIT_CARD' ? 'elevation' : 'outlined'}
+                  sx={{ borderColor: novaCobranca.tipo === 'CREDIT_CARD' ? 'primary.main' : 'grey.300', borderWidth: 2, minWidth: 120, boxShadow: novaCobranca.tipo === 'CREDIT_CARD' ? 4 : 0 }}
+                >
+                  <CardActionArea onClick={() => setNovaCobranca({ ...novaCobranca, tipo: 'CREDIT_CARD' })}>
+                    <Box p={2} textAlign="center">
+                      <Typography variant="subtitle1" fontWeight={novaCobranca.tipo === 'CREDIT_CARD' ? 700 : 400}>Cartão de Crédito</Typography>
+                    </Box>
+                  </CardActionArea>
+                </Card>
+              </Box>
+              {novaCobranca.tipo === 'CREDIT_CARD' && (
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel id="parcelas-label">Quantidade de Parcelas</InputLabel>
+                  <Select
+                    labelId="parcelas-label"
+                    id="parcelas-select"
+                    value={novaCobranca.parcelas}
+                    label="Quantidade de Parcelas"
+                    onChange={e => setNovaCobranca({ ...novaCobranca, parcelas: e.target.value })}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: { zIndex: 20000 }
+                      }
+                    }}
+                  >
+                    {[...Array(12)].map((_, i) => (
+                      <MenuItem key={i+1} value={(i+1).toString()}>{i+1}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              <TextField
+                label="Vencimento"
+                name="vencimento"
+                fullWidth
+                sx={{ mb: 2 }}
+                value={novaCobranca.vencimento}
+                onChange={e => setNovaCobranca({ ...novaCobranca, vencimento: formatarData(e.target.value) })}
+                placeholder="dd/mm/aaaa"
+                inputProps={{ maxLength: 10 }}
+              />
+              <TextField
+                label="Valor"
+                name="valor"
+                fullWidth
+                sx={{ mb: 2 }}
+                value={novaCobranca.valor}
+                onChange={e => setNovaCobranca({ ...novaCobranca, valor: formatarValor(e.target.value) })}
+                placeholder="R$ 0,00"
+                inputProps={{ maxLength: 15 }}
+              />
+              <TextField
+                label="Descrição"
+                name="descricao"
+                fullWidth
+                sx={{ mb: 2 }}
+                value={novaCobranca.descricao}
+                onChange={e => setNovaCobranca({ ...novaCobranca, descricao: e.target.value })}
+              />
+              <DialogActions>
+                <Button onClick={() => setModalCadastroOpen(false)} color="inherit">Cancelar</Button>
+                <Button type="submit" variant="contained" color="primary" disabled={loadingAcao}>
+                  {loadingAcao ? 'Cadastrando...' : 'Cadastrar'}
+                </Button>
+              </DialogActions>
+            </Box>
+          </DialogContent>
+        </Dialog>
       )}
     </Box>
   );
