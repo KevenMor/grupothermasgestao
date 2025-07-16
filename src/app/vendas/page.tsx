@@ -430,6 +430,7 @@ export default function VendasPage() {
 
   function getStatusColor(status: string): "success" | "warning" | "error" | "info" | "default" {
     switch (status) {
+      case 'ativo': return 'success';
       case 'aprovada': return 'success';
       case 'pendente': return 'warning';
       case 'cancelada': return 'error';

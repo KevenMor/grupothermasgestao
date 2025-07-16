@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         const { error } = await supabase
           .from('vendas')
           .update({ 
-            status: 'pago',
+            status: 'ativo', // Mudar para 'ativo' quando pago
             asaas_payment_id: payment.id,
             data_pagamento: new Date().toISOString().split('T')[0]
           })
@@ -27,12 +27,13 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Erro ao atualizar venda' }, { status: 500 });
         }
 
-        console.log(`Venda ${payment.externalReference} marcada como paga`);
+        console.log(`Venda ${payment.externalReference} marcada como ativa e paga`);
         
         // Aqui você pode adicionar outras ações:
         // - Enviar e-mail de confirmação
         // - Gerar recibo
         // - Atualizar status da cobrança
+        // - Enviar notificação para o cliente
         // - etc.
       }
     }
