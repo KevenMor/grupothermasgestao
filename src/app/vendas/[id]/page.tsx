@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Box, Typography, Paper, Divider, CircularProgress, Button, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip, TextField, MenuItem, FormControl, InputLabel, Select, Card, CardActionArea, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { Download, Eye, Copy, Send, FileText, CreditCard, QrCode, Pencil, Trash2 } from "lucide-react";
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { supabase } from "@/lib/supabase";
+import { IMaskInput } from 'react-imask';
 
 // Tipos auxiliares
 interface Pagamento {
@@ -76,6 +80,16 @@ interface VendaDetalhe {
   historico_envio?: HistoricoEnvio[];
 }
 
+interface Dependente {
+  id: number;
+  venda_id: number;
+  nome: string;
+  data_nascimento: string;
+  parentesco: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function VendaDetalhePage() {
   const params = useParams();
   const id = params?.id as string;
@@ -99,6 +113,16 @@ export default function VendaDetalhePage() {
     descricao: '',
     parcelas: '1',
   });
+  const [dependentes, setDependentes] = useState<Dependente[]>([]);
+  const [dependenteAtual, setDependenteAtual] = useState<{ nome: string; data_nascimento: string; parentesco: string }>({
+    nome: '',
+    data_nascimento: '',
+    parentesco: ''
+  });
+  const [modalDependenteOpen, setModalDependenteOpen] = useState(false);
+  const [editandoDependente, setEditandoDependente] = useState<Dependente | null>(null);
+
+  const parentescos = ["Cônjuge", "Filho(a)", "Pai", "Mãe", "Irmão(a)", "Outro"];
 
   useEffect(() => {
     async function fetchVenda() {
@@ -114,22 +138,40 @@ export default function VendaDetalhePage() {
     if (id) fetchVenda();
   }, [id]);
 
+  // Função para carregar dependentes
+  const fetchDependentes = async () => {
+    if (!venda) return;
+    try {
+      const { data, error } = await supabase
+        .from('dependentes')
+        .select('*')
+        .eq('venda_id', venda.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar dependentes:', error);
+      } else {
+        setDependentes(data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dependentes:', error);
+    }
+  };
+
   useEffect(() => {
     async function fetchCobrancas() {
       if (!venda) return;
-      
       setLoadingCobrancas(true);
       try {
         const response = await fetch(`/api/asaas/listar-cobrancas?venda_id=${venda.id}`);
         const result = await response.json();
-        
         if (response.ok) {
           setCobrancas(result.data || []);
         } else {
-          console.error('Erro ao buscar cobranças:', result.error);
+          console.error('Erro ao carregar cobranças:', result.error);
         }
       } catch (error) {
-        console.error('Erro ao buscar cobranças:', error);
+        console.error('Erro ao carregar cobranças:', error);
       } finally {
         setLoadingCobrancas(false);
       }
@@ -137,6 +179,7 @@ export default function VendaDetalhePage() {
 
     if (venda) {
       fetchCobrancas();
+      fetchDependentes();
     }
   }, [venda]);
 
@@ -356,6 +399,138 @@ export default function VendaDetalhePage() {
     return v;
   }
 
+  // Função para formatar data de nascimento no padrão DD/MM/AAAA
+  function formatarDataNascimento(data: string): string {
+    if (!data) return '';
+    
+    // Se já está no formato DD/MM/AAAA, retorna como está
+    if (data.includes('/')) return data;
+    
+    // Se está no formato ISO (YYYY-MM-DD), converte para DD/MM/AAAA
+    if (data.includes('-')) {
+      const [ano, mes, dia] = data.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    return data;
+  }
+
+  // Funções para gerenciar dependentes
+  function formatarDataParaISO(data: string) {
+    if (!data) return '';
+    
+    // Se está no formato DD/MM/AAAA, converte para ISO
+    if (data.includes('/')) {
+      const [dia, mes, ano] = data.split('/');
+      return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+    
+    return data;
+  }
+
+  function formatarNome(nome: string): string {
+    return nome
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  async function salvarDependente() {
+    if (!venda || !dependenteAtual.nome || !dependenteAtual.data_nascimento || !dependenteAtual.parentesco) {
+      setMensagem({ tipo: 'error', texto: 'Preencha todos os campos do dependente.' });
+      return;
+    }
+
+    if (dependentes.length >= 5 && !editandoDependente) {
+      setMensagem({ tipo: 'error', texto: 'Limite máximo de 5 dependentes atingido.' });
+      return;
+    }
+
+    setLoadingAcao(true);
+    try {
+      const dadosDependente = {
+        venda_id: venda.id,
+        nome: formatarNome(dependenteAtual.nome),
+        data_nascimento: formatarDataParaISO(dependenteAtual.data_nascimento),
+        parentesco: dependenteAtual.parentesco
+      };
+
+      if (editandoDependente) {
+        // Editar dependente existente
+        const { error } = await supabase
+          .from('dependentes')
+          .update(dadosDependente)
+          .eq('id', editandoDependente.id);
+
+        if (error) {
+          setMensagem({ tipo: 'error', texto: `Erro ao editar dependente: ${error.message}` });
+          return;
+        }
+        setMensagem({ tipo: 'success', texto: 'Dependente editado com sucesso!' });
+      } else {
+        // Adicionar novo dependente
+        const { error } = await supabase
+          .from('dependentes')
+          .insert([dadosDependente]);
+
+        if (error) {
+          setMensagem({ tipo: 'error', texto: `Erro ao adicionar dependente: ${error.message}` });
+          return;
+        }
+        setMensagem({ tipo: 'success', texto: 'Dependente adicionado com sucesso!' });
+      }
+
+      // Limpar formulário e recarregar dependentes
+      setDependenteAtual({ nome: '', data_nascimento: '', parentesco: '' });
+      setEditandoDependente(null);
+      setModalDependenteOpen(false);
+      await fetchDependentes();
+    } catch (error) {
+      setMensagem({ tipo: 'error', texto: 'Erro ao salvar dependente.' });
+    } finally {
+      setLoadingAcao(false);
+    }
+  }
+
+  async function excluirDependente(id: number) {
+    if (!confirm('Tem certeza que deseja excluir este dependente?')) return;
+
+    setLoadingAcao(true);
+    try {
+      const { error } = await supabase
+        .from('dependentes')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        setMensagem({ tipo: 'error', texto: `Erro ao excluir dependente: ${error.message}` });
+        return;
+      }
+
+      setMensagem({ tipo: 'success', texto: 'Dependente excluído com sucesso!' });
+      await fetchDependentes();
+    } catch (error) {
+      setMensagem({ tipo: 'error', texto: 'Erro ao excluir dependente.' });
+    } finally {
+      setLoadingAcao(false);
+    }
+  }
+
+  function abrirModalDependente(dependente: Dependente | null = null) {
+    if (dependente) {
+      setEditandoDependente(dependente);
+      setDependenteAtual({
+        nome: dependente.nome,
+        data_nascimento: formatarDataNascimento(dependente.data_nascimento),
+        parentesco: dependente.parentesco
+      });
+    } else {
+      setEditandoDependente(null);
+      setDependenteAtual({ nome: '', data_nascimento: '', parentesco: '' });
+    }
+    setModalDependenteOpen(true);
+  }
+
   // Função para cadastrar nova cobrança
   const cadastrarCobranca = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -446,8 +621,15 @@ export default function VendaDetalhePage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 1, md: 4 } }}>
-      <Typography variant="h4" fontWeight={700} mb={2} color="primary.main">
+    <Box sx={{ 
+      maxWidth: 1200, 
+      mx: "auto", 
+      p: { xs: 2, md: 4 },
+      pb: { xs: 4, md: 6 }, // Adicionar padding bottom para garantir espaço para scroll
+      minHeight: '100vh',
+      position: 'relative'
+    }}>
+      <Typography variant="h4" fontWeight={700} mb={2} color="primary.main" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
         Detalhes do Cliente/Contrato
       </Typography>
       
@@ -458,7 +640,7 @@ export default function VendaDetalhePage() {
           <Box>
             <Typography><b>Nome:</b> {venda.cliente_nome}</Typography>
             <Typography><b>CPF:</b> {venda.cliente_cpf}</Typography>
-            <Typography><b>Data de Nascimento:</b> {venda.cliente_data_nascimento}</Typography>
+            <Typography><b>Data de Nascimento:</b> {formatarDataNascimento(venda.cliente_data_nascimento)}</Typography>
             <Typography><b>Estado Civil:</b> {venda.cliente_estado_civil}</Typography>
             <Typography><b>Profissão:</b> {venda.cliente_profissao}</Typography>
             <Typography><b>Telefone:</b> {venda.cliente_telefone}</Typography>
@@ -470,6 +652,71 @@ export default function VendaDetalhePage() {
             <Typography><b>CEP:</b> {venda.cliente_cep}</Typography>
           </Box>
         </Box>
+      </Paper>
+      
+      {/* Seção de Dependentes */}
+      <Paper sx={{ p: 3, borderRadius: 4, mb: 4 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6" fontWeight={600}>Dependentes ({dependentes.length}/5)</Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => abrirModalDependente()}
+            disabled={dependentes.length >= 5}
+            startIcon={<AddIcon />}
+          >
+            Adicionar Dependente
+          </Button>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        
+        {dependentes.length > 0 ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(300px, 1fr))' }, gap: 2 }}>
+            {dependentes.map((dependente) => (
+              <Paper key={dependente.id} sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" fontWeight={600} color="primary">
+                      {dependente.nome}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <b>Data de Nascimento:</b> {formatarDataNascimento(dependente.data_nascimento)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      <b>Parentesco:</b> {dependente.parentesco}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => abrirModalDependente(dependente)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => excluirDependente(dependente.id)}
+                      disabled={loadingAcao}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        ) : (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography color="text.secondary" variant="body1">
+              Nenhum dependente cadastrado.
+            </Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+              Adicione dependentes para este cliente.
+            </Typography>
+          </Box>
+        )}
       </Paper>
       
       <Paper sx={{ p: 3, borderRadius: 4, mb: 4 }}>
@@ -822,6 +1069,64 @@ export default function VendaDetalhePage() {
                 </Button>
               </DialogActions>
             </Box>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de dependente */}
+      {modalDependenteOpen && (
+        <Dialog open={modalDependenteOpen} onClose={() => setModalDependenteOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {editandoDependente ? 'Editar Dependente' : 'Adicionar Dependente'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+              <TextField
+                label="Nome Completo"
+                value={dependenteAtual.nome}
+                onChange={(e) => setDependenteAtual({ ...dependenteAtual, nome: formatarNome(e.target.value) })}
+                fullWidth
+                variant="filled"
+              />
+              <TextField
+                label="Data de Nascimento"
+                value={dependenteAtual.data_nascimento}
+                onChange={(e) => setDependenteAtual({ ...dependenteAtual, data_nascimento: e.target.value })}
+                fullWidth
+                variant="filled"
+                InputProps={{
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  inputComponent: IMaskInput as any,
+                  inputProps: { mask: '00/00/0000' }
+                }}
+              />
+              <TextField
+                select
+                label="Parentesco"
+                value={dependenteAtual.parentesco}
+                onChange={(e) => setDependenteAtual({ ...dependenteAtual, parentesco: e.target.value })}
+                fullWidth
+                variant="filled"
+              >
+                {parentescos.map((parentesco) => (
+                  <MenuItem key={parentesco} value={parentesco}>
+                    {parentesco}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+            <DialogActions>
+              <Button onClick={() => setModalDependenteOpen(false)} disabled={loadingAcao}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="contained" 
+                onClick={salvarDependente} 
+                disabled={loadingAcao}
+              >
+                {loadingAcao ? 'Salvando...' : (editandoDependente ? 'Atualizar' : 'Adicionar')}
+              </Button>
+            </DialogActions>
           </DialogContent>
         </Dialog>
       )}

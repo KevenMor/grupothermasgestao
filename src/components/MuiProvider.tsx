@@ -6,7 +6,7 @@ let theme = createTheme({
     mode: "light",
     primary: { main: '#1976d2', contrastText: '#fff' },
     secondary: { main: '#00bcd4', contrastText: '#fff' },
-    background: { default: '#f7fafd', paper: '#fff' },
+    background: { default: '#ffffff', paper: '#fff' },
     text: { primary: '#222', secondary: '#5f6a7d' },
     success: { main: '#43a047' },
     warning: { main: '#ffa726' },

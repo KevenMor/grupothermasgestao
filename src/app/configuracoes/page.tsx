@@ -14,14 +14,31 @@ export default function ConfiguracoesIntegracao() {
   useEffect(() => {
     async function fetchConfig() {
       setCarregando(true);
-      const { data } = await supabase
-        .from('configuracoes_integracao')
-        .select('chave_api')
-        .eq('nome_sistema', 'asaas')
-        .eq('ativo', true)
-        .single();
-      if (data) setChaveApi(data.chave_api);
-      setCarregando(false);
+      try {
+        const { data, error } = await supabase
+          .from('configuracoes_integracao')
+          .select('chave_api')
+          .eq('nome_sistema', 'asaas')
+          .eq('ativo', true)
+          .single();
+        
+        if (error) {
+          console.error('Erro ao carregar configuração:', error);
+          if (error.code === 'PGRST116') {
+            // Configuração não existe ainda, isso é normal
+            console.log('Configuração do Asaas não encontrada. Será criada quando salvar.');
+          } else {
+            setErro('Erro ao carregar configuração: ' + error.message);
+          }
+        } else if (data) {
+          setChaveApi(data.chave_api);
+        }
+      } catch (err) {
+        console.error('Erro inesperado:', err);
+        setErro('Erro inesperado ao carregar configuração');
+      } finally {
+        setCarregando(false);
+      }
     }
     fetchConfig();
   }, []);

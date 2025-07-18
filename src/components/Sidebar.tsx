@@ -1,6 +1,6 @@
 'use client';
 
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Box, Divider, IconButton, Typography } from '@mui/material';
+import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Box, Divider, IconButton, Typography, useTheme, useMediaQuery } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -9,22 +9,52 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useRouter } from 'next/navigation';
+import PersonIcon from '@mui/icons-material/Person';
+import { usePermissions } from '@/hooks/usePermissions';
 
-const drawerWidth = 256;
+const drawerWidth = 280;
 const menu = [
-  { name: "Dashboard", href: "/", icon: <DashboardIcon /> },
+  { name: "Dashboard", href: "/dashboard", icon: <DashboardIcon /> },
   { name: "Gestão de Usuários", href: "/usuarios", icon: <PeopleIcon /> },
   { name: "Gestão de Vendas/Sócios", href: "/vendas", icon: <MonetizationOnIcon /> },
   { name: "Cobranças e Pagamentos", href: "/cobrancas", icon: <PaymentIcon /> },
-  { name: "Futuro", href: "#", icon: <MoreHorizIcon /> },
+  { name: "Futuro", href: "/futuro", icon: <MoreHorizIcon /> },
 ];
 
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [usuarioLogado, setUsuarioLogado] = useState<{ id: number; nome: string; email: string } | null>(null);
+  const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  // Carregar permissões do usuário
+  const { podeAcessarMenu } = usePermissions(usuarioLogado?.id);
+
+  useEffect(() => {
+    // Carregar dados do usuário logado
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUsuarioLogado(user);
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    router.replace('/login');
+  };
 
   const drawerContent = (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header com logo */}
       <Toolbar sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
         <Box
           sx={{
@@ -49,29 +79,101 @@ export default function Sidebar() {
         <Typography variant="h6" fontWeight={700} color="white" mt={1} mb={0} sx={{ letterSpacing: 1 }}>Grupo Thermas</Typography>
       </Toolbar>
       <Divider sx={{ bgcolor: 'white', opacity: 0.2, mx: 2, borderRadius: 2 }} />
-      <List sx={{ mt: 2 }}>
-        {menu.map((item) => (
-          <ListItem key={item.name} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton
-              component={Link}
-              href={item.href}
-              sx={{
-                mx: 2,
-                borderRadius: 3,
-                py: 1.5,
-                px: 2,
-                '&:hover': { bgcolor: '#e3f2fd', color: 'primary.main' },
-                transition: 'all 0.2s',
-              }}
-              onClick={() => setMobileOpen(false)}
-            >
-              <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.name} primaryTypographyProps={{ fontWeight: 500, fontSize: 16 }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+      
+      {/* Menu principal */}
+      <List sx={{ mt: 2, px: 1, flex: 1 }}>
+        {menu.map((item) => {
+          // Verificar se usuário pode acessar este menu
+          const menuKey = item.href.replace('/', '');
+          const podeAcessar = podeAcessarMenu(menuKey);
+          
+          // Se não pode acessar, não renderizar o item
+          if (!podeAcessar) return null;
+          
+          return (
+            <ListItem key={item.name} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                component={Link}
+                href={item.href}
+                sx={{
+                  mx: 1,
+                  borderRadius: 3,
+                  py: 1.5,
+                  px: 2,
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', color: 'white' },
+                  '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.15)' },
+                  transition: 'all 0.2s',
+                }}
+                onClick={() => setMobileOpen(false)}
+              >
+                <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>{item.icon}</ListItemIcon>
+                <ListItemText 
+                  primary={item.name} 
+                  primaryTypographyProps={{ 
+                    fontWeight: 500, 
+                    fontSize: isMobile ? 14 : 16 
+                  }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+        <ListItem disablePadding sx={{ mt: 2 }}>
+          <ListItemButton 
+            onClick={handleLogout} 
+            sx={{ 
+              mx: 1, 
+              borderRadius: 3, 
+              py: 1.5, 
+              px: 2,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+              transition: 'all 0.2s',
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>
+              <LogoutIcon fontSize="medium" />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Sair" 
+              primaryTypographyProps={{ 
+                fontWeight: 500, 
+                fontSize: isMobile ? 14 : 16 
+              }} 
+            />
+          </ListItemButton>
+        </ListItem>
       </List>
-    </>
+      
+      {/* Footer com informações do usuário */}
+      {usuarioLogado && (
+        <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <PersonIcon sx={{ fontSize: 20, color: 'rgba(255,255,255,0.8)' }} />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'rgba(255,255,255,0.9)', 
+                fontWeight: 600,
+                fontSize: isMobile ? 12 : 14
+              }}
+            >
+              {usuarioLogado.nome}
+            </Typography>
+          </Box>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: 'rgba(255,255,255,0.6)', 
+              fontSize: isMobile ? 10 : 12,
+              display: 'block',
+              ml: 3
+            }}
+          >
+            {usuarioLogado.email}
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 
   return (
@@ -89,12 +191,14 @@ export default function Sidebar() {
           zIndex: 1300,
           display: { xs: 'flex', md: 'none' },
           bgcolor: 'white',
-          boxShadow: 2,
+          boxShadow: 3,
           borderRadius: 2,
+          '&:hover': { bgcolor: 'grey.50' },
         }}
       >
         <MenuIcon />
       </IconButton>
+
       {/* Drawer para desktop */}
       <Drawer
         variant="permanent"
@@ -107,15 +211,22 @@ export default function Sidebar() {
             boxSizing: 'border-box',
             bgcolor: 'primary.main',
             color: 'white',
-            borderTopRightRadius: 32,
-            borderBottomRightRadius: 32,
+            borderTopRightRadius: 24,
+            borderBottomRightRadius: 24,
             p: 0,
+            boxShadow: 3,
+            position: 'fixed',
+            height: '100vh',
+            overflow: 'hidden',
+            left: 0,
+            top: 0,
           },
         }}
         open
       >
         {drawerContent}
       </Drawer>
+
       {/* Drawer para mobile */}
       <Drawer
         variant="temporary"
@@ -129,14 +240,22 @@ export default function Sidebar() {
             boxSizing: 'border-box',
             bgcolor: 'primary.main',
             color: 'white',
-            borderTopRightRadius: 32,
-            borderBottomRightRadius: 32,
+            borderTopRightRadius: 24,
+            borderBottomRightRadius: 24,
             p: 0,
+            boxShadow: 3,
           },
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-          <IconButton onClick={() => setMobileOpen(false)} color="inherit">
+          <IconButton 
+            onClick={() => setMobileOpen(false)} 
+            color="inherit"
+            sx={{ 
+              bgcolor: 'rgba(255,255,255,0.1)', 
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } 
+            }}
+          >
             <CloseIcon />
           </IconButton>
         </Box>

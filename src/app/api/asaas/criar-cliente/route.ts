@@ -11,6 +11,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dados obrigatórios não fornecidos.' }, { status: 400 });
     }
 
+    // Buscar o tipo de contrato da venda
+    const { data: vendaData, error: vendaError } = await supabase
+      .from('vendas')
+      .select('tipo_contrato')
+      .eq('id', venda_id)
+      .single();
+
+    if (vendaError) {
+      console.error('ERRO ao buscar tipo de contrato:', vendaError);
+      return NextResponse.json({ error: 'Erro ao buscar dados da venda.' }, { status: 400 });
+    }
+
+    const tipoContrato = vendaData?.tipo_contrato || 'Lote Vitalício Therra';
+
     // Buscar chave da API do Asaas no banco
     const { data: configData, error: configError } = await supabase
       .from('configuracoes_integracao')
@@ -40,6 +54,8 @@ export async function POST(req: NextRequest) {
       complement: cliente.cliente_complemento || '',
       province: cliente.cliente_estado || '',
       city: cliente.cliente_cidade || '',
+      company: tipoContrato, // Adicionar o tipo de contrato como empresa
+      group: tipoContrato, // Adicionar o tipo de contrato como grupo
     };
 
     console.log('DEBUG - Criando cliente no Asaas:', clientePayload);

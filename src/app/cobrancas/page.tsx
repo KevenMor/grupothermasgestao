@@ -383,17 +383,29 @@ function CobrancasPage() {
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Cobranças e Pagamentos
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Tooltip title="Atualizar">
-            <IconButton onClick={carregarCobrancas} color="primary">
-              <RefreshCw />
-            </IconButton>
-          </Tooltip>
+    <Box sx={{ width: '100%', height: '100%', pl: 0, pr: 0 }}>
+      <Box sx={{ mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+            Cobranças e Pagamentos
+          </Typography>
+          <Box display="flex" gap={2}>
+            <Tooltip title="Atualizar">
+              <IconButton 
+                onClick={carregarCobrancas} 
+                color="primary"
+                sx={{ 
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'primary.dark' },
+                  width: { xs: 48, sm: 40 },
+                  height: { xs: 48, sm: 40 }
+                }}
+              >
+                <RefreshCw size={20} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Box>
 
@@ -406,161 +418,307 @@ function CobrancasPage() {
       {/* Estatísticas */}
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(5, 1fr)' }, 
-        gap: 3, 
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, 
+        gap: { xs: 2, sm: 3 }, 
         mb: 3 
       }}>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               Total
             </Typography>
-            <Typography variant="h4">
+            <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               {stats.total}
             </Typography>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               Pendentes
             </Typography>
-            <Typography variant="h4" color="warning.main">
+            <Typography variant="h4" color="warning.main" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               {stats.pendentes}
             </Typography>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               Pagas
             </Typography>
-            <Typography variant="h4" color="success.main">
+            <Typography variant="h4" color="success.main" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               {stats.pagas}
             </Typography>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               Vencidas
             </Typography>
-            <Typography variant="h4" color="error.main">
+            <Typography variant="h4" color="error.main" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               {stats.vencidas}
             </Typography>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Typography color="textSecondary" gutterBottom>
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography color="textSecondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               Canceladas
             </Typography>
-            <Typography variant="h4" color="textSecondary">
+            <Typography variant="h4" color="textSecondary" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               {stats.canceladas}
             </Typography>
           </CardContent>
         </Card>
       </Box>
 
-      {/* Tabela de Cobranças */}
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Cliente</TableCell>
-                <TableCell>Descrição</TableCell>
-                <TableCell>Valor</TableCell>
-                <TableCell>Vencimento</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Forma de Pagamento</TableCell>
-                <TableCell align="center">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {cobrancas.map((cobranca) => (
-                <TableRow key={cobranca.id}>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">
-                        {cobranca.customer?.name}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {cobranca.customer?.email}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {cobranca.description}
-                    </Typography>
-                    {cobranca.externalReference && (
-                      <Typography variant="caption" color="textSecondary">
-                        Ref: {cobranca.externalReference}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="bold">
-                      {formatCurrency(cobranca.value)}
-                    </Typography>
-                    {cobranca.installmentCount && cobranca.installmentCount > 1 && (
-                      <Typography variant="caption" color="textSecondary">
-                        {cobranca.installmentNumber}/{cobranca.installmentCount} parcelas
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {formatDate(cobranca.dueDate)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={getStatusIcon(cobranca.status)}
-                      label={getStatusText(cobranca.status)}
-                      color={getStatusColor(cobranca.status) as 'warning' | 'success' | 'error' | 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      {getBillingTypeIcon(cobranca.billingType)}
-                      <Typography variant="body2">
-                        {cobranca.billingType === 'PIX' ? 'PIX' : 
-                         cobranca.billingType === 'CREDIT_CARD' ? 'Cartão de Crédito' :
-                         cobranca.billingType === 'BOLETO' ? 'Boleto' : cobranca.billingType}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Box display="flex" gap={1} justifyContent="center">
-                      <Tooltip title="Ver detalhes">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenModal(cobranca)}
-                          color="primary"
-                        >
-                          <Eye size={16} />
-                        </IconButton>
-                      </Tooltip>
-                      
-                      <Tooltip title="Mais ações">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleMenuOpen(e, cobranca.id)}
-                        >
-                          <MoreVertical size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
+      {/* Desktop Table */}
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <Paper sx={{ borderRadius: 4, boxShadow: '0 2px 16px 0 rgba(0,0,0,0.04)' }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Cliente</TableCell>
+                  <TableCell>Descrição</TableCell>
+                  <TableCell>Valor</TableCell>
+                  <TableCell>Vencimento</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Forma de Pagamento</TableCell>
+                  <TableCell align="center">Ações</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+              </TableHead>
+              <TableBody>
+                {cobrancas.map((cobranca) => (
+                  <TableRow key={cobranca.id}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body2" fontWeight="bold">
+                          {cobranca.customer?.name}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {cobranca.customer?.email}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {cobranca.description}
+                      </Typography>
+                      {cobranca.externalReference && (
+                        <Typography variant="caption" color="textSecondary">
+                          Ref: {cobranca.externalReference}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">
+                        {formatCurrency(cobranca.value)}
+                      </Typography>
+                      {cobranca.installmentCount && cobranca.installmentCount > 1 && (
+                        <Typography variant="caption" color="textSecondary">
+                          {cobranca.installmentNumber}/{cobranca.installmentCount} parcelas
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {formatDate(cobranca.dueDate)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={getStatusIcon(cobranca.status)}
+                        label={getStatusText(cobranca.status)}
+                        color={getStatusColor(cobranca.status) as 'warning' | 'success' | 'error' | 'default'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        {getBillingTypeIcon(cobranca.billingType)}
+                        <Typography variant="body2">
+                          {cobranca.billingType === 'PIX' ? 'PIX' : 
+                           cobranca.billingType === 'CREDIT_CARD' ? 'Cartão de Crédito' :
+                           cobranca.billingType === 'BOLETO' ? 'Boleto' : cobranca.billingType}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" gap={1} justifyContent="center">
+                        <Tooltip title="Ver detalhes">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenModal(cobranca)}
+                            color="primary"
+                          >
+                            <Eye size={16} />
+                          </IconButton>
+                        </Tooltip>
+                        
+                        <Tooltip title="Mais ações">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleMenuOpen(e, cobranca.id)}
+                          >
+                            <MoreVertical size={16} />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Box>
+
+      {/* Mobile Cards */}
+      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {cobrancas.map((cobranca) => (
+            <Paper
+              key={cobranca.id}
+              elevation={2}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  elevation: 4,
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
+                }
+              }}
+            >
+              {/* Header do Card */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5, color: 'text.primary' }}>
+                    {cobranca.customer?.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                    {cobranca.customer?.email}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenModal(cobranca)}
+                    color="primary"
+                    sx={{ 
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': { bgcolor: 'primary.dark' },
+                      width: 36,
+                      height: 36
+                    }}
+                  >
+                    <Eye size={16} />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleMenuOpen(e, cobranca.id)}
+                    sx={{ 
+                      bgcolor: 'grey.200',
+                      color: 'grey.700',
+                      '&:hover': { bgcolor: 'grey.300' },
+                      width: 36,
+                      height: 36
+                    }}
+                  >
+                    <MoreVertical size={16} />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {/* Informações da Cobrança */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                    Descrição:
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {cobranca.description}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                    Valor:
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    {formatCurrency(cobranca.value)}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                    Vencimento:
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {formatDate(cobranca.dueDate)}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                    Status:
+                  </Typography>
+                  <Chip
+                    icon={getStatusIcon(cobranca.status)}
+                    label={getStatusText(cobranca.status)}
+                    color={getStatusColor(cobranca.status) as 'warning' | 'success' | 'error' | 'default'}
+                    size="small"
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                    Pagamento:
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {getBillingTypeIcon(cobranca.billingType)}
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {cobranca.billingType === 'PIX' ? 'PIX' : 
+                       cobranca.billingType === 'CREDIT_CARD' ? 'Cartão de Crédito' :
+                       cobranca.billingType === 'BOLETO' ? 'Boleto' : cobranca.billingType}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {cobranca.installmentCount && cobranca.installmentCount > 1 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                      Parcelas:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {cobranca.installmentNumber}/{cobranca.installmentCount}
+                    </Typography>
+                  </Box>
+                )}
+
+                {cobranca.externalReference && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 80 }}>
+                      Referência:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {cobranca.externalReference}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          ))}
+        </Box>
+      </Box>
 
       {/* Menu de ações contextuais */}
       <Menu

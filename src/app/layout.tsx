@@ -1,8 +1,7 @@
 import EmotionCacheProvider from "@/components/EmotionCacheProvider";
 import MuiProvider from "@/components/MuiProvider";
-import Sidebar from "@/components/Sidebar";
+import SystemLayout from "@/components/SystemLayout";
 import "./globals.css";
-import { Box } from "@mui/material";
 
 export const metadata = {
   title: "Grupo Thermas SaaS",
@@ -15,16 +14,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body>
+    <html lang="pt-BR" style={{ margin: 0, padding: 0, width: '100%', height: '100%' }}>
+      <body style={{ margin: 0, padding: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
         <EmotionCacheProvider>
           <MuiProvider>
-            <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-              <Sidebar />
-              <Box component="main" sx={{ flex: 1, p: { xs: 1, sm: 3, md: 4 }, width: '100%', minHeight: '100vh', bgcolor: 'background.default', transition: 'padding 0.3s' }}>
-                {children}
-              </Box>
-            </Box>
+            <SystemLayout>
+              {children}
+            </SystemLayout>
           </MuiProvider>
         </EmotionCacheProvider>
       </body>
