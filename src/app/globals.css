@@ -45,3 +45,70 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Safari iOS específico */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    /* Previne zoom automático no Safari iOS */
+    -webkit-text-size-adjust: 100%;
+    /* Melhora a renderização de fontes */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Ajustes para viewport no Safari iOS */
+  @viewport {
+    width: device-width;
+    initial-scale: 1;
+    maximum-scale: 1;
+    user-scalable: no;
+  }
+  
+  /* Previne comportamentos indesejados no Safari iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Permite seleção de texto em campos de input */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  
+  /* Ajustes para elementos fixos no Safari iOS */
+  .fixed, .sticky {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Melhora performance de animações no Safari iOS */
+  .animate, .transition {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* Ajustes gerais para mobile */
+@media screen and (max-width: 768px) {
+  html {
+    /* Previne zoom em inputs no iOS */
+    font-size: 16px;
+  }
+  
+  /* Melhora scroll no Safari iOS */
+  body {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+  
+  /* Ajustes para elementos com altura 100vh no Safari iOS */
+  .h-screen, .min-h-screen {
+    min-height: -webkit-fill-available;
+    min-height: fill-available;
+  }
+}

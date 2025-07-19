@@ -147,7 +147,22 @@ export default function Sidebar() {
                 transform: 'translateY(-1px)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
               },
+              '&:active': {
+                bgcolor: 'rgba(255,255,255,0.3)',
+                transform: 'translateY(0)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              },
               transition: 'all 0.3s ease',
+              /* Safari iOS específico */
+              WebkitTapHighlightColor: 'transparent',
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+              /* Melhora performance no Safari iOS */
+              WebkitTransform: 'translate3d(0, 0, 0)',
+              transform: 'translate3d(0, 0, 0)',
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
             }}
           >
             <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>
@@ -290,6 +305,17 @@ export default function Sidebar() {
             borderBottomRightRadius: 24,
             p: 0,
             boxShadow: 3,
+            /* Safari iOS específico */
+            WebkitOverflowScrolling: 'touch',
+            overflowScrolling: 'touch',
+            /* Previne problemas de altura no Safari iOS */
+            height: '100vh',
+            minHeight: '-webkit-fill-available',
+            /* Melhora performance no Safari iOS */
+            WebkitTransform: 'translate3d(0, 0, 0)',
+            transform: 'translate3d(0, 0, 0)',
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden',
           },
         }}
       >
