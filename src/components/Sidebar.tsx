@@ -9,6 +9,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import ChatIcon from '@mui/icons-material/Chat';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -52,6 +53,11 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     router.replace('/login');
+  };
+
+  const handleOpenChat = () => {
+    window.open('https://chat.grupothermas.com.br', '_blank');
+    setMobileOpen(false);
   };
 
   const drawerContent = (
@@ -123,6 +129,41 @@ export default function Sidebar() {
             </ListItem>
           );
         })}
+        
+        {/* Botão Abrir Chat - Destacado */}
+        <ListItem disablePadding sx={{ mt: 3, mb: 2 }}>
+          <ListItemButton 
+            onClick={handleOpenChat} 
+            sx={{ 
+              mx: 1, 
+              borderRadius: 3, 
+              py: 2, 
+              px: 2,
+              bgcolor: 'rgba(255,255,255,0.15)',
+              border: '2px solid rgba(255,255,255,0.3)',
+              '&:hover': { 
+                bgcolor: 'rgba(255,255,255,0.25)',
+                border: '2px solid rgba(255,255,255,0.5)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              },
+              transition: 'all 0.3s ease',
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>
+              <ChatIcon fontSize="medium" />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Abrir Chat" 
+              primaryTypographyProps={{ 
+                fontWeight: 600, 
+                fontSize: isMobile ? 14 : 16,
+                color: 'white'
+              }} 
+            />
+          </ListItemButton>
+        </ListItem>
+
         <ListItem disablePadding sx={{ mt: 2 }}>
           <ListItemButton 
             onClick={handleLogout} 
