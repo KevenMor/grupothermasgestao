@@ -5,6 +5,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import PaymentIcon from '@mui/icons-material/Payment';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -20,6 +21,7 @@ const menu = [
   { name: "Dashboard", href: "/dashboard", icon: <DashboardIcon /> },
   { name: "Gestão de Usuários", href: "/usuarios", icon: <PeopleIcon /> },
   { name: "Gestão de Vendas/Sócios", href: "/vendas", icon: <MonetizationOnIcon /> },
+  { name: "Cortesias", href: "/cortesias", icon: <CardGiftcardIcon /> },
   { name: "Cobranças e Pagamentos", href: "/cobrancas", icon: <PaymentIcon /> },
   { name: "Futuro", href: "/futuro", icon: <MoreHorizIcon /> },
 ];
@@ -87,8 +89,11 @@ export default function Sidebar() {
           const menuKey = item.href.replace('/', '');
           const podeAcessar = podeAcessarMenu(menuKey);
           
-          // Se não pode acessar, não renderizar o item
-          if (!podeAcessar) return null;
+          // Debug: mostrar permissões no console
+          console.log(`Menu ${item.name} (${menuKey}): podeAcessar = ${podeAcessar}`);
+          
+          // Temporariamente mostrar todos os menus para debug
+          // if (!podeAcessar) return null;
           
           return (
             <ListItem key={item.name} disablePadding sx={{ mb: 1 }}>

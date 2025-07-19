@@ -13,9 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { IMaskInput } from 'react-imask';
 import PeopleIcon from "@mui/icons-material/People";
 import HomeIcon from "@mui/icons-material/Home";
-import CPFMask from '@/components/CPFMask';
-import TelefoneMask from '@/components/TelefoneMask';
-import CepMask from '@/components/CepMask';
+
 import { useRouter } from "next/navigation";
 import { NumericFormat } from 'react-number-format';
 import ClearIcon from "@mui/icons-material/Clear";
@@ -970,7 +968,9 @@ export default function VendasPage() {
                           <CreditCardIcon sx={{ color: 'primary.main', fontSize: 24 }} />
                         </InputAdornment>
                       ),
-                      inputComponent: CPFMask,
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      inputComponent: IMaskInput as any,
+                      inputProps: { mask: '000.000.000-00' }
                     }}
                   />
                 </Box>
@@ -1002,7 +1002,9 @@ export default function VendasPage() {
                     required
                     variant="filled"
                     InputProps={{
-                      inputComponent: TelefoneMask,
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      inputComponent: IMaskInput as any,
+                      inputProps: { mask: '(00) 00000-0000' }
                     }}
                   />
                 </Box>
@@ -1067,7 +1069,9 @@ export default function VendasPage() {
                     required
                     variant="filled"
                     InputProps={{
-                      inputComponent: CepMask,
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      inputComponent: IMaskInput as any,
+                      inputProps: { mask: '00000-000' }
                     }}
                   />
                 </Box>

@@ -1,14 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { IMaskInput } from 'react-imask';
 import { forwardRef } from 'react';
+import { TextField, TextFieldProps } from '@mui/material';
 
-const TelefoneMask = forwardRef<HTMLInputElement, any>(function TelefoneMask(props, ref) {
+const TelefoneMask = forwardRef<HTMLInputElement, TextFieldProps>(function TelefoneMask(props, ref) {
   return (
-    <IMaskInput
+    <TextField
       {...props}
-      mask="(00) 00000-0000"
-      inputRef={ref as React.Ref<HTMLInputElement>}
-      overwrite
+      InputProps={{
+        inputComponent: IMaskInput as any,
+        inputProps: {
+          mask: "(00) 0000-0000",
+          overwrite: true,
+          unmask: false,
+          lazy: false,
+          prepare: (str: string) => str.replace(/\D/g, ''),
+        },
+      }}
+      inputRef={ref}
     />
   );
 });
