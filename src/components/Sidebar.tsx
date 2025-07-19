@@ -24,7 +24,6 @@ const menu = [
   { name: "Gestão de Vendas/Sócios", href: "/vendas", icon: <MonetizationOnIcon /> },
   { name: "Cortesias", href: "/cortesias", icon: <CardGiftcardIcon /> },
   { name: "Cobranças e Pagamentos", href: "/cobrancas", icon: <PaymentIcon /> },
-  { name: "Futuro", href: "/futuro", icon: <MoreHorizIcon /> },
 ];
 
 export default function Sidebar() {
